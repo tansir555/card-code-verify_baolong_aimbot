@@ -1,16 +1,29 @@
--- 全局变量初始化（默认快捷键F5，保持简洁）
+-- ************************ 仅加密核心的 GitHub 链接 ************************
+local function decryptStr(encryptedStr)
+    local key = 666999
+    local decrypted = ""
+    for i = 1, #encryptedStr do
+        local charCode = bit32.bxor(string.byte(encryptedStr, i), key) % 256
+        decrypted = decrypted .. string.char(charCode)
+    end
+    return decrypted
+end
+
+-- 替换成你的加密链接
+local ENCRYPTED_GITHUB_URL = "MXX"
+local GITHUB_CARD_RAW_URL = decryptStr(ENCRYPTED_GITHUB_URL)
+-- *************************************************************************************
+
+-- 全局变量（保留直观命名，方便调试）
 _G.HeadSize = 525
-_G.Disabled = true  -- _G.Disabled=true → 功能「启用」；false → 功能「禁用」（恢复所有修改）
+_G.IsEnabled = true
 _G.ToggleKey = Enum.KeyCode.H
-_G.DefaultSize = 5  -- 默认尺寸，用于恢复
-_G.UiVisible = true  -- 标记UI是否可见，用于控制状态
-_G.CardVerified = false  -- 卡密验证状态（默认未通过）
-_G.UsedCards = {}  -- 本地记录已使用卡密（规避重复使用）
+_G.DefaultSize = 5
+_G.IsUiVisible = true
+_G.IsCardVerified = false
+_G.UsedCards = {}
 
--- ============== 核心配置：GitHub 卡密文件 Raw 链接（仅需修改这一行） ==============
-local GITHUB_CARD_RAW_URL = "https://raw.githubusercontent.com/tansir555/card-code-verify_baolong_aimbot/refs/heads/main/baolong_codes.json"
-
--- ============== 服务获取 ==============
+-- 服务获取
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
@@ -18,14 +31,13 @@ local HttpService = game:GetService("HttpService")
 local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
--- ============== 新增：卡密验证UI（优先显示，未验证前隐藏工具UI） ==============
+-- ============== 卡密验证UI（文字正常显示） ==============
 local CardVerifyGui = Instance.new("ScreenGui")
 CardVerifyGui.Name = "CardVerifyGui"
 CardVerifyGui.ResetOnSpawn = false
-CardVerifyGui.DisplayOrder = 200  -- 层级高于工具UI
+CardVerifyGui.DisplayOrder = 200
 CardVerifyGui.Parent = PlayerGui
 
--- 卡密验证主面板
 local CardMainFrame = Instance.new("Frame")
 CardMainFrame.Name = "CardMainFrame"
 CardMainFrame.Size = UDim2.new(0, 300, 0, 150)
@@ -36,18 +48,16 @@ CardMainFrame.Active = true
 CardMainFrame.Draggable = true
 CardMainFrame.Parent = CardVerifyGui
 
--- 卡密标题
 local CardTitle = Instance.new("TextLabel")
 CardTitle.Size = UDim2.new(1, 0, 0, 30)
 CardTitle.Position = UDim2.new(0, 0, 0, 0)
 CardTitle.BackgroundColor3 = Color3.fromRGB(200, 100, 0)
-CardTitle.Text = "暴龙脚本 - GitHub 卡密验证"
+CardTitle.Text = "暴龙脚本 - GitHub 卡密验证"  -- 正常显示
 CardTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
 CardTitle.Font = Enum.Font.SourceSansBold
 CardTitle.TextSize = 16
 CardTitle.Parent = CardMainFrame
 
--- 卡密输入框
 local CardInputBox = Instance.new("TextBox")
 CardInputBox.Size = UDim2.new(0, 260, 0, 30)
 CardInputBox.Position = UDim2.new(0, 20, 0, 40)
@@ -57,22 +67,20 @@ CardInputBox.Text = ""
 CardInputBox.TextColor3 = Color3.fromRGB(255, 255, 255)
 CardInputBox.Font = Enum.Font.SourceSans
 CardInputBox.TextSize = 14
-CardInputBox.PlaceholderText = "输入 GitHub 托管卡密（如：ROBLOX-666-888-BAOLONG）"
+CardInputBox.PlaceholderText = "输入 GitHub 托管卡密（如：ROBLOX-666-888-BAOLONG）"  -- 正常显示
 CardInputBox.ClearTextOnFocus = false
 CardInputBox.Parent = CardMainFrame
 
--- 卡密验证按钮
 local CardVerifyButton = Instance.new("TextButton")
 CardVerifyButton.Size = UDim2.new(0, 260, 0, 40)
 CardVerifyButton.Position = UDim2.new(0, 20, 0, 80)
 CardVerifyButton.BackgroundColor3 = Color3.fromRGB(0, 100, 150)
-CardVerifyButton.Text = "点击验证（全依赖 GitHub）"
+CardVerifyButton.Text = "点击验证（全依赖 GitHub）"  -- 正常显示
 CardVerifyButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 CardVerifyButton.Font = Enum.Font.SourceSansBold
 CardVerifyButton.TextSize = 14
 CardVerifyButton.Parent = CardMainFrame
 
--- 卡密验证提示
 local CardTipLabel = Instance.new("TextLabel")
 CardTipLabel.Size = UDim2.new(1, 0, 0, 20)
 CardTipLabel.Position = UDim2.new(0, 0, 0, 130)
@@ -83,346 +91,12 @@ CardTipLabel.Font = Enum.Font.SourceSans
 CardTipLabel.TextSize = 12
 CardTipLabel.Parent = CardMainFrame
 
--- ============== 原有工具UI（未验证前隐藏） ==============
+-- ============== 原有工具UI（文字正常显示） ==============
 local MainGui = Instance.new("ScreenGui")
 MainGui.Name = "HeadSizeAdjustGui"
 MainGui.ResetOnSpawn = false
 MainGui.DisplayOrder = 100
-MainGui.Enabled = false  -- 未验证前隐藏
+MainGui.Enabled = false
 MainGui.Parent = PlayerGui
 
--- UI主面板
-local MainFrame = Instance.new("Frame")
-MainFrame.Name = "MainFrame"
-MainFrame.Size = UDim2.new(0, 320, 0, 280)
-MainFrame.Position = UDim2.new(0.5, -160, 0.1, 0)
-MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-MainFrame.BorderColor3 = Color3.fromRGB(100, 100, 100)
-MainFrame.Active = true
-MainFrame.Draggable = true
-MainFrame.Parent = MainGui
-
--- 暴龙专属标识
-local ExclusiveLabel = Instance.new("TextLabel")
-ExclusiveLabel.Size = UDim2.new(1, 0, 0, 25)
-ExclusiveLabel.Position = UDim2.new(0, 0, 0, 0)
-ExclusiveLabel.BackgroundColor3 = Color3.fromRGB(200, 100, 0)
-ExclusiveLabel.Text = "暴龙专属脚本（GitHub 卡密验证）"
-ExclusiveLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-ExclusiveLabel.Font = Enum.Font.SourceSansBold
-ExclusiveLabel.TextSize = 14
-ExclusiveLabel.Parent = MainFrame
-
--- 标题
-local TitleLabel = Instance.new("TextLabel")
-TitleLabel.Size = UDim2.new(1, 0, 0, 30)
-TitleLabel.Position = UDim2.new(0, 0, 0, 25)
-TitleLabel.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-TitleLabel.Text = "头部大小调整工具（当前快捷键：" .. _G.ToggleKey.Name .. "）"
-TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-TitleLabel.Font = Enum.Font.SourceSansBold
-TitleLabel.TextSize = 16
-TitleLabel.Parent = MainFrame
-
--- 当前头部大小提示
-local ValueTipLabel = Instance.new("TextLabel")
-ValueTipLabel.Size = UDim2.new(1, 0, 0, 30)
-ValueTipLabel.Position = UDim2.new(0, 0, 0, 65)
-ValueTipLabel.BackgroundTransparency = 1
-ValueTipLabel.Text = "当前头部大小：" .. tostring(_G.HeadSize)
-ValueTipLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-ValueTipLabel.Font = Enum.Font.SourceSans
-ValueTipLabel.TextSize = 14
-ValueTipLabel.Parent = MainFrame
-
--- 数值输入框
-local ValueInputBox = Instance.new("TextBox")
-ValueInputBox.Size = UDim2.new(0, 220, 0, 30)
-ValueInputBox.Position = UDim2.new(0, 50, 0, 105)
-ValueInputBox.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-ValueInputBox.BorderColor3 = Color3.fromRGB(100, 100, 100)
-ValueInputBox.Text = tostring(_G.HeadSize)
-ValueInputBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-ValueInputBox.Font = Enum.Font.SourceSans
-ValueInputBox.TextSize = 14
-ValueInputBox.PlaceholderText = "输入大于0的数字（如525）"
-ValueInputBox.ClearTextOnFocus = false
-ValueInputBox.Parent = MainFrame
-
--- 启用/禁用切换按钮
-local ToggleButton = Instance.new("TextButton")
-ToggleButton.Size = UDim2.new(1, 0, 0, 40)
-ToggleButton.Position = UDim2.new(0, 0, 0, 145)
-ToggleButton.BackgroundColor3 = _G.Disabled and Color3.fromRGB(0, 150, 0) or Color3.fromRGB(150, 0, 0)
-ToggleButton.Text = _G.Disabled and "当前：启用中（按" .. _G.ToggleKey.Name .. "禁用）" or "当前：禁用中（按" .. _G.ToggleKey.Name .. "启用）"
-ToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-ToggleButton.Font = Enum.Font.SourceSansBold
-ToggleButton.TextSize = 14
-ToggleButton.Parent = MainFrame
-
--- 快捷键修改按钮
-local KeyChangeButton = Instance.new("TextButton")
-KeyChangeButton.Size = UDim2.new(1, 0, 0, 40)
-KeyChangeButton.Position = UDim2.new(0, 0, 0, 185)
-KeyChangeButton.BackgroundColor3 = Color3.fromRGB(0, 100, 150)
-KeyChangeButton.Text = "点击我，然后按任意键更换快捷键"
-KeyChangeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-KeyChangeButton.Font = Enum.Font.SourceSans
-KeyChangeButton.TextSize = 12
-KeyChangeButton.Parent = MainFrame
-
--- 快捷键修改提示
-local KeyChangeTip = Instance.new("TextLabel")
-KeyChangeTip.Size = UDim2.new(1, 0, 0, 20)
-KeyChangeTip.Position = UDim2.new(0, 0, 0, 225)
-KeyChangeTip.BackgroundTransparency = 1
-KeyChangeTip.Text = ""
-KeyChangeTip.TextColor3 = Color3.fromRGB(255, 200, 0)
-KeyChangeTip.Font = Enum.Font.SourceSans
-KeyChangeTip.TextSize = 11
-KeyChangeTip.Parent = MainFrame
-
--- 关闭UI并恢复所有修改按钮
-local CloseButton = Instance.new("TextButton")
-CloseButton.Size = UDim2.new(1, 0, 0, 40)
-CloseButton.Position = UDim2.new(0, 0, 0, 245)
-CloseButton.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
-CloseButton.Text = "关闭工具并恢复所有默认设置"
-CloseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-CloseButton.Font = Enum.Font.SourceSansBold
-CloseButton.TextSize = 12
-CloseButton.Parent = MainFrame
-
--- ============== 核心函数（全依赖 GitHub 验证，新增功能锁） ==============
--- 1. 从 GitHub 拉取卡密列表（核心：仅依赖 GitHub）
-local function getGitHubCards()
-    local success, result = pcall(function()
-        -- 拉取 GitHub 原始 JSON 文件
-        local response = HttpService:GetAsync(GITHUB_CARD_RAW_URL, true, {Timeout = 10})
-        return HttpService:JSONDecode(response)
-    end)
-
-    if not success then
-        return nil, "❌ 拉取 GitHub 卡密失败：" .. tostring(result)
-    end
-
-    if not result or not result.valid_cards then
-        return nil, "❌ GitHub 卡密文件格式错误"
-    end
-
-    return result.valid_cards, "✅ 拉取卡密成功"
-end
-
--- 2. GitHub 卡密验证核心（无第三方，全依赖 GitHub 拉取的内容）
-local function verifyGitHubCard(cardCode)
-    -- 过滤无效输入
-    if not cardCode or cardCode:Trim() == "" then
-        return false, "卡密不能为空"
-    end
-    cardCode = cardCode:Trim()
-
-    -- 检查本地是否已使用（规避重复使用）
-    if _G.UsedCards[cardCode] then
-        return false, "该卡密已被你使用过"
-    end
-
-    -- 拉取 GitHub 卡密
-    local validCards, msg = getGitHubCards()
-    if not validCards then
-        return false, msg
-    end
-
-    -- 校验卡密和有效期
-    local currentTime = os.time()
-    for _, card in ipairs(validCards) do
-        local cloudCard = card.card_code or ""
-        local expireStr = card.expire_time or ""
-
-        if cloudCard == cardCode then
-            -- 解析有效期
-            local expireTime = os.time({
-                year = tonumber(expireStr:sub(1, 4)),
-                month = tonumber(expireStr:sub(6, 7)),
-                day = tonumber(expireStr:sub(9, 10)),
-                hour = tonumber(expireStr:sub(12, 13)),
-                min = tonumber(expireStr:sub(15, 16)),
-                sec = tonumber(expireStr:sub(18, 19))
-            })
-
-            if not expireTime or currentTime > expireTime then
-                return false, "卡密已过期（失效时间：" .. expireStr .. "）"
-            end
-
-            -- 验证通过，记录本地已使用
-            _G.UsedCards[cardCode] = true
-            return true, "卡密验证通过！解锁工具功能"
-        end
-    end
-
-    return false, "卡密无效，未在 GitHub 托管列表中"
-end
-
--- 3. 全量恢复所有修改
-local function restoreAllModifiedData()
-    if not _G.CardVerified then return end
-
-    for _, v in next, Players:GetPlayers() do
-        if v.Name ~= LocalPlayer.Name then
-            pcall(function()
-                local humanoidRootPart = v.Character and v.Character:FindFirstChild("HumanoidRootPart")
-                if humanoidRootPart then
-                    humanoidRootPart.Size = Vector3.new(_G.DefaultSize, _G.DefaultSize, _G.DefaultSize)
-                    humanoidRootPart.Transparency = 0
-                    humanoidRootPart.BrickColor = BrickColor.new("Medium stone grey")
-                    humanoidRootPart.Material = Enum.Material.Plastic
-                    humanoidRootPart.CanCollide = true
-                end
-            end)
-        end
-    end
-end
-
--- 4. 更新启用/禁用状态
-local function updateToggleState()
-    if not _G.CardVerified then return end
-
-    ToggleButton.BackgroundColor3 = _G.Disabled and Color3.fromRGB(0, 150, 0) or Color3.fromRGB(150, 0, 0)
-    ToggleButton.Text = _G.Disabled and "当前：启用中（按" .. _G.ToggleKey.Name .. "禁用）" or "当前：禁用中（按" .. _G.ToggleKey.Name .. "启用）"
-    TitleLabel.Text = "头部大小调整工具（当前快捷键：" .. _G.ToggleKey.Name .. "）"
-end
-
--- 5. 切换启用/禁用
-local function toggleDisabledState()
-    if not _G.CardVerified then return end
-
-    _G.Disabled = not _G.Disabled
-    if not _G.Disabled then
-        restoreAllModifiedData()
-    end
-    updateToggleState()
-end
-
--- 6. 更新头部大小
-local function updateHeadSizeFromInput()
-    if not _G.CardVerified then return end
-
-    local inputValue = tonumber(ValueInputBox.Text)
-    if inputValue and inputValue > 0 then
-        _G.HeadSize = inputValue
-        ValueTipLabel.Text = "当前头部大小：" .. tostring(_G.HeadSize)
-        ValueInputBox.Text = tostring(_G.HeadSize)
-    else
-        ValueInputBox.Text = tostring(_G.HeadSize)
-        warn("输入无效！请输入大于0的数字")
-    end
-end
-
--- 7. 快捷键修改
-local isWaitingForKey = false
-local keyBindConnection = nil
-local function startKeyChange()
-    if not _G.CardVerified or isWaitingForKey then return end
-
-    if keyBindConnection then
-        keyBindConnection:Disconnect()
-        keyBindConnection = nil
-    end
-
-    isWaitingForKey = true
-    KeyChangeTip.Text = "请按下你想要设置的快捷键（任意键盘键）"
-    KeyChangeButton.Text = "等待按键中..."
-    KeyChangeButton.BackgroundColor3 = Color3.fromRGB(150, 100, 0)
-
-    keyBindConnection = UserInputService.InputBegan:Connect(function(input, gameProcessedEvent)
-        if not gameProcessedEvent and input.UserInputType == Enum.UserInputType.Keyboard and input.KeyCode ~= Enum.KeyCode.Unknown then
-            _G.ToggleKey = input.KeyCode
-            isWaitingForKey = false
-
-            KeyChangeTip.Text = "快捷键已更换为：" .. _G.ToggleKey.Name .. "（立即生效）"
-            KeyChangeButton.Text = "点击我，然后按任意键更换快捷键"
-            KeyChangeButton.BackgroundColor3 = Color3.fromRGB(0, 100, 150)
-            updateToggleState()
-
-            if keyBindConnection then
-                keyBindConnection:Disconnect()
-                keyBindConnection = nil
-            end
-
-            wait(3)
-            if KeyChangeTip then
-                KeyChangeTip.Text = ""
-            end
-        end
-    end)
-end
-
--- 8. 关闭工具并恢复
-local function closeAndRestoreAll()
-    if not _G.CardVerified then return end
-
-    restoreAllModifiedData()
-    _G.Disabled = false
-    updateToggleState()
-    _G.UiVisible = false
-    MainGui.Enabled = false
-
-    if keyBindConnection then
-        keyBindConnection:Disconnect()
-        keyBindConnection = nil
-    end
-end
-
--- ============== 卡密验证按钮绑定（全依赖 GitHub 验证） ==============
-CardVerifyButton.MouseButton1Click:Connect(function()
-    local cardCode = CardInputBox.Text
-    local isValid, message = verifyGitHubCard(cardCode)
-
-    -- 更新提示
-    CardTipLabel.Text = message
-    if isValid then
-        -- 验证通过：隐藏卡密UI，显示工具UI，解锁功能
-        _G.CardVerified = true
-        CardVerifyGui.Enabled = false
-        MainGui.Enabled = true
-        updateToggleState()
-    else
-        -- 验证失败：清空输入框
-        CardInputBox.Text = ""
-    end
-end)
-
--- ============== 原有事件绑定（添加卡密验证锁） ==============
-ValueInputBox.FocusLost:Connect(updateHeadSizeFromInput)
-ToggleButton.MouseButton1Click:Connect(toggleDisabledState)
-KeyChangeButton.MouseButton1Click:Connect(startKeyChange)
-CloseButton.MouseButton1Click:Connect(closeAndRestoreAll)
-
--- 全局快捷键监听
-UserInputService.InputBegan:Connect(function(input, gameProcessedEvent)
-    if gameProcessedEvent or not _G.CardVerified then return end
-    if input.UserInputType ~= Enum.UserInputType.Keyboard or input.KeyCode == Enum.KeyCode.Unknown then return end
-
-    if _G.UiVisible and input.KeyCode == _G.ToggleKey then
-        pcall(toggleDisabledState)
-    end
-end)
-
--- 原有功能扩展（卡密验证通过后才生效）
-RunService.RenderStepped:Connect(function()
-    if not _G.CardVerified or not _G.UiVisible or not _G.Disabled then return end
-
-    for _, v in next, Players:GetPlayers() do
-        if v.Name ~= LocalPlayer.Name then
-            pcall(function()
-                local humanoidRootPart = v.Character and v.Character:FindFirstChild("HumanoidRootPart")
-                if humanoidRootPart then
-                    humanoidRootPart.Size = Vector3.new(_G.HeadSize, _G.HeadSize, _G.HeadSize)
-                    humanoidRootPart.Transparency = 0.7
-                    humanoidRootPart.BrickColor = BrickColor.new("Really blue")
-                    humanoidRootPart.Material = Enum.Material.Neon
-                    humanoidRootPart.CanCollide = false
-                end
-            end)
-        end
-    end
-end)
+-- （后面的UI代码我就不重复贴了，你只需要把之前脚本里的UI文字从 `decryptStr("xxx")` 改成正常文字即可）
