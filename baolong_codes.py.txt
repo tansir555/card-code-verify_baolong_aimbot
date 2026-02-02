@@ -1,0 +1,89 @@
+import requests
+import datetime
+import sys
+
+# ---------------------- 核心配置项（仅需修改这一行） ----------------------
+# 替换为步骤 2 复制的 GitHub 卡密文件原始链接
+GITHUB_CARD_FILE_URL = "https://raw.githubusercontent.com/tansir555/card-code-verify_baolong_aimbot/refs/heads/main/baolong_codes.json"
+# -------------------------------------------------------------------------
+
+def get_cloud_valid_cards():
+    """从 GitHub 云端拉取有效卡密列表"""
+    try:
+        # 发送 GET 请求拉取卡密文件，设置 10 秒超时
+        response = requests.get(GITHUB_CARD_FILE_URL, timeout=10)
+        response.raise_for_status()  # 若请求失败（404/500 等），抛出异常
+        
+        # 解析 JSON 数据并返回
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        print(f"❌ 连接云端卡密仓库失败：{str(e)}")
+        return None
+    except ValueError as e:
+        print(f"❌ 解析卡密数据失败（格式错误）：{str(e)}")
+        return None
+
+def verify_user_card():
+    """接收用户输入卡密，并完成验证"""
+    # 1. 提示用户输入卡密
+    user_card = input("请输入你的脚本卡密：").strip()
+    if not user_card:
+        print("❌ 卡密不能为空！")
+        return False
+    
+    # 2. 拉取云端卡密
+    cloud_card_data = get_cloud_valid_cards()
+    if not cloud_card_data or "valid_cards" not in cloud_card_data:
+        print("❌ 无法获取有效卡密列表，验证终止！")
+        return False
+    
+    # 3. 开始验证卡密（比对、过期、是否已使用）
+    current_time = datetime.datetime.now()
+    valid_cards = cloud_card_data["valid_cards"]
+    
+    for card in valid_cards:
+        # 提取卡密信息（容错处理，避免字段缺失报错）
+        card_code = card.get("card_code", "")
+        expire_str = card.get("expire_time", "")
+        is_used = card.get("used", True)
+        
+        # 卡密匹配成功，进一步校验
+        if card_code == user_card:
+            if is_used:
+                print("❌ 该卡密已被使用，无法重复激活！")
+                return False
+            
+            # 校验有效期
+            try:
+                expire_time = datetime.datetime.strptime(expire_str, "%Y-%m-%d %H:%M:%S")
+                if current_time > expire_time:
+                    print("❌ 该卡密已过期！")
+                    return False
+            except ValueError:
+                print("❌ 云端卡密有效期格式错误，无法验证！")
+                return False
+            
+            # 所有校验通过
+            print("✅ 卡密验证通过，即将执行脚本核心功能！")
+            return True
+    
+    # 无匹配卡密
+    print("❌ 输入的卡密无效，请检查卡密是否正确！")
+    return False
+
+def script_core_function():
+    """脚本核心功能（验证通过后执行，可自定义修改）"""
+    print("\n==================== 核心功能开始执行 ====================")
+    print("Hello！这是验证通过后才会运行的核心逻辑~")
+    print("你可以在这里替换为自己的脚本功能（比如数据处理、自动化操作等）")
+    print("==================== 核心功能执行完毕 ====================")
+
+# ---------------------- 脚本入口（主逻辑） ----------------------
+if __name__ == "__main__":
+    print("欢迎使用脚本，先进行卡密验证...\n")
+    # 卡密验证通过，才执行核心功能
+    if verify_user_card():
+        script_core_function()
+    else:
+        print("\n脚本退出，未执行核心功能！")
+        sys.exit(1)
