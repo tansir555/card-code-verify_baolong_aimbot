@@ -2,13 +2,11 @@
   "valid_cards": [
     {
       "card_code": "PYTHON-666-888-VERIFY",
-      "expire_time": "2027-12-31 23:59:59",
-      "used": false
+      "expire_time": "2027-12-31 23:59:59"
     },
     {
       "card_code": "GITHUB-999-000-CARD",
       "expire_time": "2027-06-30 23:59:59",
-      "used": false
     }
   ]
 }
