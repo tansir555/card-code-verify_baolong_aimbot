@@ -10,7 +10,7 @@ local function decryptStr(encryptedStr)
 end
 
 -- 替换成你的加密链接
-local ENCRYPTED_GITHUB_URL = "MXX"
+local ENCRYPTED_GITHUB_URL = "https://raw.githubusercontent.com/tansir555/card-code-verify_baolong_aimbot/refs/heads/main/baolong_codes.json"
 local GITHUB_CARD_RAW_URL = decryptStr(ENCRYPTED_GITHUB_URL)
 -- *************************************************************************************
 
@@ -100,3 +100,4 @@ MainGui.Enabled = false
 MainGui.Parent = PlayerGui
 
 -- （后面的UI代码我就不重复贴了，你只需要把之前脚本里的UI文字从 `decryptStr("xxx")` 改成正常文字即可）
+
